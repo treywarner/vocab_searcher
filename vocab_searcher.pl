@@ -12,50 +12,52 @@ our %colors = (
     'link' => 'magenta'
 );
 
+sub uncolor {
+    return $_[0] =~ s/\e.*?m//gr;
+}
 
 sub format_sentence {
     my ($sentence, $topics, $query, $plain) = @_;
-    my @output_sentence;
 
     my ($topic, $rest_of_sentence) = split(/:/, $sentence, 2);
-    push @output_sentence, colored("$topic:", $colors{'topic'});
 
-    my @words = split(/\s+/, $rest_of_sentence);
+    $rest_of_sentence =~ s/($query)/colored("$1","$colors{'query'}")/ieg;
 
-    for my $word (@words) {
-        my ($found_topic, $split1, $split2, $split3) = (-1, '', '', '');
-
-        for my $i (0 .. $#{$topics}) {
-            if ($word =~ /(.*)(\Q${$topics}[$i]\E)(.*)/i) {
-                $found_topic = $i;
-                $split1 = $1;
-                $split2 = $2;
-                $split3 = $3;
-                last;
-            }
-        }
-
-        # if ($word =~ /$query/i && $found_topic >= 0) {
-        #     push @output_sentence, colored($word, $colors{'query&link'}) . ' ';
-        # } elsif ($word =~ /$query/i) {
-        #     push @output_sentence, colored($word, $colors{'query'}) . ' ';
-        # } elsif ($found_topic >= 0) {
-        #     push @output_sentence, colored($split1, $colors{'link'}) . $split2 . ' ';
-        # } else {
-        #     push @output_sentence, $word . ' ';
-        # }
-        if ($word =~ /$query/i && $found_topic >= 0) {
-            push @output_sentence, colored($word, $colors{'query&link'}) . ' ';
-        } elsif ($word =~ /$query/i) {
-            push @output_sentence, colored($word, $colors{'query'}) . ' ';
-        } elsif ($found_topic >= 0) {
-            push @output_sentence, $split1 . colored($split2, $colors{'link'}) . $split3 . ' ';
-        } else {
-            push @output_sentence, $word . ' ';
-        }
+    for my $i (0 .. $#{$topics}) {
+        $rest_of_sentence =~ s/(\Q${$topics}[$i]\E)/colored("$1","$colors{'link'}")/ieg;
     }
+    $sentence = colored($topic.':', $colors{'topic'}) . $rest_of_sentence;
+    return $plain ? uncolor($sentence) : $sentence;
 
-    return $plain ? join('', map { uncolor($_) } @output_sentence) : @output_sentence;
+    # push @output_sentence, colored("$topic:", $colors{'topic'});
+
+    # my @words = split(/\s+/, $rest_of_sentence);
+
+    # for my $word (@words) {
+    #     my ($found_topic, $split1, $split2, $split3) = (-1, '', '', '');
+
+    #     for my $i (0 .. $#{$topics}) {
+    #         if ($word =~ /(.*)(\Q${$topics}[$i]\E)(.*)/i) {
+    #             $found_topic = $i;
+    #             $split1 = $1;
+    #             $split2 = $2;
+    #             $split3 = $3;
+    #             last;
+    #         }
+    #     }
+
+    #     if ($word =~ /$query/i && $found_topic >= 0) {
+    #         push @output_sentence, colored($word, $colors{'query&link'}) . ' ';
+    #     } elsif ($word =~ /$query/i) {
+    #         push @output_sentence, colored($word, $colors{'query'}) . ' ';
+    #     } elsif ($found_topic >= 0) {
+    #         push @output_sentence, $split1 . colored($split2, $colors{'link'}) . $split3 . ' ';
+    #     } else {
+    #         push @output_sentence, $word . ' ';
+    #     }
+    # }
+
+    #return $plain ? join('', map { uncolor($_) } @output_sentence) : @output_sentence;
 }
 
 sub print_query {
